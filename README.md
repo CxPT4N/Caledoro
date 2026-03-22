@@ -42,22 +42,33 @@ Data is stored locally using **Hive**:
 
 | Box Name       | Purpose |
 |----------------|---------|
-| `tasksBox`     | Stores Task objects |
-| `pomodoroBox`  | Stores timer settings |
-| `calendarBox`  | Stores calendar events |
-| `settingsBox`  | Theme & preferences |
+| `tasksBox`     | Stores TaskModel objects |
+| `settingsBox`  | Pomodoro settings & theme preferences |
+| `widgetBox`    | Home widget state |
 
 ### 📦 Data Models
 
-- **Task** – id, title, description, status, priority, linked Pomodoro, optional date  
-- **Pomodoro** – work duration, short/long break, cycles completed, total cycles  
-- **CalendarEvent** – id, title, start/end, optional task link  
+- **TaskModel** – id, title, description, dueDate, priority (enum), completed, recurringDaily  
+- **SettingsModel** – workDuration, shortBreakDuration, longBreakDuration, darkMode, accentColor  
 
 ---
 
 ## 🧠 State Management
 
-State is managed using **Riverpod** (or Provider). Timer and task state is preserved when the app is minimized or restarted.
+State is managed using **Riverpod** with `NotifierProvider` pattern. All state changes persist to Hive automatically.
+
+**Key Providers:**
+- `taskListProvider` – Manages all tasks (add, update, delete, toggle completion)
+- `settingsProvider` – Manages Pomodoro durations and theme settings
+
+Widgets access state via:
+```dart
+// Read current state
+final tasks = ref.watch(taskListProvider);
+
+// Mutate state
+ref.read(taskListProvider.notifier).addTask(task);
+```
 
 ---
 
@@ -72,19 +83,40 @@ Uses `flutter_local_notifications` to notify:
 
 ## 📂 Architecture
 
+The app follows a **Riverpod-based Provider Pattern** with clear separation of concerns:
+
 ```text
 lib/
-├── core/
-│   ├── timer/
-│   ├── calendar/
-│   └── storage/
-├── features/
-│   ├── pomodoro/
-│   ├── todo/
-│   └── theme/
-├── widgets/
-└── main.dart
+├── main.dart                    # App initialization & navigation
+├── theme.dart                   # Theme configuration
+├── models/                      # Data models with Hive serialization
+│   ├── task_model.dart
+│   ├── task_model.g.dart
+│   ├── settings_model.dart
+│   └── settings_model.g.dart
+├── providers/                   # Riverpod NotifierProviders (state management)
+│   ├── task_provider.dart       # TaskListNotifier
+│   └── settings_provider.dart   # SettingsNotifier
+├── screens/                     # Page-level widgets
+│   ├── home_widget_screen.dart
+│   ├── calendar_screen.dart
+│   └── pomodoro_settings_screen.dart
+├── services/                    # Data & external integrations
+│   ├── hive_service.dart        # Hive storage initialization
+│   └── widget_service.dart      # Home widget updates
+├── widgets/                     # Reusable UI components
+│   ├── pomodoro_timer_widget.dart
+│   ├── task_checklist_widget.dart
+│   └── mini_calendar_widget.dart
+└── utils/                       # Helper functions
+    └── date_utils.dart
 ```
+
+### State Management Flow
+- **Providers** (`task_provider.dart`, `settings_provider.dart`) manage all app state
+- **Widgets** use `ConsumerWidget` / `ConsumerStatefulWidget` to watch and mutate state
+- **Hive** persists state through `HiveService`
+- **Models** use code generation (`@HiveType`, `@HiveField`) for serialization
 
 ---
 
