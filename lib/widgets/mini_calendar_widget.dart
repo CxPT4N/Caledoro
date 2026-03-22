@@ -20,16 +20,17 @@ class MiniCalendarWidget extends ConsumerWidget {
     }
 
     return Card(
-      color: Colors.grey.shade900,
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Mini Calendar',
+            Text('Mini Calendar',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
@@ -74,7 +75,7 @@ class MiniCalendarWidget extends ConsumerWidget {
                 },
               ),
               onDaySelected: (day, focusedDay) {
-                ref.read(selectedDateProvider.notifier).state = day;
+                ref.read(selectedDateProvider.notifier).setDate(day);
               },
               headerStyle: const HeaderStyle(
                   formatButtonVisible: false, titleCentered: true),

@@ -15,21 +15,32 @@ class PomodoroTimerWidget extends ConsumerStatefulWidget {
       _PomodoroTimerWidgetState();
 }
 
-class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget> {
+class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget>
+    with TickerProviderStateMixin {
   PomodoroPhase phase = PomodoroPhase.work;
   Timer? _timer;
   int _remainingSeconds = 0;
   int _completedPomodoros = 0;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     _setupForPhase();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -48,6 +59,8 @@ class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget> {
   void _toggleTimer() {
     if (_timer?.isActive ?? false) {
       _timer?.cancel();
+      _pulseController.stop();
+      _pulseController.value = 0.0; // reset to 1.0 scale
     } else {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
@@ -60,6 +73,8 @@ class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget> {
             );
           } else {
             timer.cancel();
+            _pulseController.stop();
+            _pulseController.value = 0.0;
             if (phase == PomodoroPhase.work) {
               _completedPomodoros += 1;
               final settings = ref.read(settingsProvider);
@@ -78,6 +93,7 @@ class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget> {
           }
         });
       });
+      _pulseController.repeat(reverse: true);
     }
   }
 
@@ -91,9 +107,9 @@ class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final color = switch (phase) {
-      PomodoroPhase.work => Colors.deepOrangeAccent,
-      PomodoroPhase.shortBreak => Colors.greenAccent,
-      PomodoroPhase.longBreak => Colors.blueAccent,
+      PomodoroPhase.work => Theme.of(context).colorScheme.primary,
+      PomodoroPhase.shortBreak => Theme.of(context).colorScheme.secondary,
+      PomodoroPhase.longBreak => Theme.of(context).colorScheme.tertiary,
     };
 
     final totalSeconds = phase == PomodoroPhase.work
@@ -109,61 +125,82 @@ class _PomodoroTimerWidgetState extends ConsumerState<PomodoroTimerWidget> {
       PomodoroPhase.longBreak => 'Long Break',
     };
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          alignment: Alignment.center,
+    return Card(
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 190,
-              height: 190,
-              child: CircularProgressIndicator(
-                value: ratio,
-                strokeWidth: 12,
-                valueColor: AlwaysStoppedAnimation(color),
-                backgroundColor: Colors.grey.shade800,
-              ),
-            ),
-            GestureDetector(
-              onTap: _toggleTimer,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatTime(_remainingSeconds),
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _pulseAnimation.value,
+                      child: SizedBox(
+                        width: 190,
+                        height: 190,
+                        child: CircularProgressIndicator(
+                          value: ratio,
+                          strokeWidth: 12,
+                          valueColor: AlwaysStoppedAnimation(color),
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                         ),
+                      ),
+                    );
+                  },
+                ),
+                GestureDetector(
+                  onTap: _toggleTimer,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatTime(_remainingSeconds),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineLarge
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        phaseLabel,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(color: color),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        (_timer?.isActive ?? false)
+                            ? 'Tap to Pause'
+                            : 'Tap to Start',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    phaseLabel,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(color: color),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    (_timer?.isActive ?? false)
-                        ? 'Tap to Pause'
-                        : 'Tap to Start',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.white70),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+            const SizedBox(height: 14),
+            Text('Completed cycles: $_completedPomodoros',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
-        const SizedBox(height: 14),
-        Text('Completed cycles: $_completedPomodoros',
-            style: const TextStyle(color: Colors.white70)),
-      ],
+      ),
     );
   }
 }

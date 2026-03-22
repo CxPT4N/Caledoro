@@ -3,16 +3,30 @@ import 'package:uuid/uuid.dart';
 import '../models/task_model.dart';
 import '../services/hive_service.dart';
 
-final taskListProvider =
-    StateNotifierProvider<TaskListNotifier, List<TaskModel>>(
-  (ref) => TaskListNotifier(),
+final taskListProvider = NotifierProvider<TaskListNotifier, List<TaskModel>>(
+  TaskListNotifier.new,
 );
 
-final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
+final selectedDateProvider = NotifierProvider<SelectedDateNotifier, DateTime>(
+  SelectedDateNotifier.new,
+);
 
-class TaskListNotifier extends StateNotifier<List<TaskModel>> {
-  TaskListNotifier() : super([]) {
+class SelectedDateNotifier extends Notifier<DateTime> {
+  @override
+  DateTime build() {
+    return DateTime.now();
+  }
+
+  void setDate(DateTime date) {
+    state = date;
+  }
+}
+
+class TaskListNotifier extends Notifier<List<TaskModel>> {
+  @override
+  List<TaskModel> build() {
     _loadTasks();
+    return state;
   }
 
   void _loadTasks() {

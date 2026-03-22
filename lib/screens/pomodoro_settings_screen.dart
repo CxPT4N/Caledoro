@@ -91,11 +91,14 @@ class PomodoroSettingsScreen extends ConsumerWidget {
         children: [
           Text(label),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
                   onPressed: () => onUpdate(value > 1 ? value - 1 : 1),
                   icon: const Icon(Icons.remove)),
-              Text(value.toString()),
+              const SizedBox(width: 8),
+              Text(value.toString(), style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
               IconButton(
                   onPressed: () => onUpdate(value + 1),
                   icon: const Icon(Icons.add)),

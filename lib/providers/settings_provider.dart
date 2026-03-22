@@ -2,18 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/settings_model.dart';
 import '../services/hive_service.dart';
 
-final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsModel>(
-  (ref) {
-    final box = HiveService.settingsBox();
-    final model = box.get('settings') ?? SettingsModel();
-    return SettingsNotifier(model);
-  },
+final settingsProvider = NotifierProvider<SettingsNotifier, SettingsModel>(
+  SettingsNotifier.new,
 );
 
-class SettingsNotifier extends StateNotifier<SettingsModel> {
-  SettingsNotifier(SettingsModel state) : super(state);
+class SettingsNotifier extends Notifier<SettingsModel> {
+  @override
+  SettingsModel build() {
+    final box = HiveService.settingsBox();
+    return box.get('settings') ?? SettingsModel();
+  }
 
-  void update({
+  Future<void> update({
     int? workMinutes,
     int? shortBreakMinutes,
     int? longBreakMinutes,

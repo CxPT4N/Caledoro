@@ -5,6 +5,7 @@ import 'screens/home_widget_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/pomodoro_settings_screen.dart';
 import 'providers/settings_provider.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,11 +40,8 @@ class _CaledoroAppState extends ConsumerState<CaledoroApp> {
     return MaterialApp(
       title: 'Caledoro',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrangeAccent),
-        scaffoldBackgroundColor: Colors.black,
-      ),
-      darkTheme: ThemeData.dark(),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: Scaffold(
         body: _pages.elementAt(_selectedIndex),
