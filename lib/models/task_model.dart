@@ -37,6 +37,9 @@ class TaskModel extends HiveObject {
   @HiveField(6)
   bool recurringDaily;
 
+  @HiveField(7)
+  DateTime? lastCompletedDate;
+
   TaskModel({
     required this.id,
     required this.title,
@@ -45,5 +48,6 @@ class TaskModel extends HiveObject {
     this.priority = TaskPriority.medium,
     this.completed = false,
     this.recurringDaily = false,
+    this.lastCompletedDate,
   });
 }

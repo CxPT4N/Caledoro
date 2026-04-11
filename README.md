@@ -22,12 +22,18 @@
 ### 📅 Calendar Integration
 - Lightweight monthly & daily views
 - Tasks optionally linked to calendar dates
+- Task creation supports explicit due-time selection
 - UI calendar navigation with events and task markers
 
 ### 🎨 Themes
 - Minimal clean UI
 - Light & Dark modes
 - Customizable accent colors
+
+### 🔁 Daily Progress
+- Recurring daily tasks with automatic day rollover reset
+- Completion streak tracking surfaced on the home screen
+- Rotating daily motivational quotes
 
 ### 📲 Android Home Screen Widgets
 - Pomodoro countdown widget
@@ -60,6 +66,8 @@ State is managed using **Riverpod** with `NotifierProvider` pattern. All state c
 **Key Providers:**
 - `taskListProvider` – Manages all tasks (add, update, delete, toggle completion)
 - `settingsProvider` – Manages Pomodoro durations and theme settings
+- `streakProvider` – Computes and exposes current recurring-task streak
+- `quoteProvider` – Returns a deterministic quote-of-the-day
 
 Widgets access state via:
 ```dart
@@ -96,14 +104,18 @@ lib/
 │   └── settings_model.g.dart
 ├── providers/                   # Riverpod NotifierProviders (state management)
 │   ├── task_provider.dart       # TaskListNotifier
-│   └── settings_provider.dart   # SettingsNotifier
+│   ├── settings_provider.dart   # SettingsNotifier
+│   ├── streak_provider.dart     # Streak derivation/state
+│   └── quote_provider.dart      # Daily quote selection
 ├── screens/                     # Page-level widgets
 │   ├── home_widget_screen.dart
 │   ├── calendar_screen.dart
 │   └── pomodoro_settings_screen.dart
 ├── services/                    # Data & external integrations
 │   ├── hive_service.dart        # Hive storage initialization
-│   └── widget_service.dart      # Home widget updates
+│   ├── widget_service.dart      # Home widget updates
+│   ├── notification_service.dart# Local notifications
+│   └── audio_service.dart       # Timer completion sound
 ├── widgets/                     # Reusable UI components
 │   ├── pomodoro_timer_widget.dart
 │   ├── task_checklist_widget.dart
@@ -154,7 +166,22 @@ Output will be under `build/app/outputs/flutter-apk/`.
 
 ## 🧪 Testing
 
-(Add integration & unit tests here when available)
+Current local test suite:
+
+- 23 passing tests (`unit`, `widget`, and `integration`)
+- Serial execution required for Hive stability:
+
+```bash
+flutter test --concurrency=1
+```
+
+- Coverage generation:
+
+```bash
+flutter test --coverage --concurrency=1
+```
+
+- Latest measured line coverage: **65.10%** (`coverage/lcov.info`)
 
 ---
 

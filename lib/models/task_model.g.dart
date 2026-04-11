@@ -59,13 +59,14 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       priority: fields[4] as TaskPriority,
       completed: fields[5] as bool,
       recurringDaily: fields[6] as bool,
+      lastCompletedDate: fields[7] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, TaskModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -79,6 +80,8 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       ..writeByte(5)
       ..write(obj.completed)
       ..writeByte(6)
-      ..write(obj.recurringDaily);
+      ..write(obj.recurringDaily)
+      ..writeByte(7)
+      ..write(obj.lastCompletedDate);
   }
 }

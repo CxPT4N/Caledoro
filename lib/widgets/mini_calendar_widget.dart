@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/task_model.dart';
 import '../providers/task_provider.dart';
+import '../theme.dart';
 
 class MiniCalendarWidget extends ConsumerWidget {
   const MiniCalendarWidget({super.key});
@@ -11,6 +12,8 @@ class MiniCalendarWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasks = ref.watch(taskListProvider);
     final selectedDate = ref.watch(selectedDateProvider);
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     Map<DateTime, List<TaskModel>> events = {};
     for (final task in tasks) {
@@ -19,77 +22,156 @@ class MiniCalendarWidget extends ConsumerWidget {
       events[day] = [...?events[day], task];
     }
 
-    return Card(
-      color: Theme.of(context).colorScheme.surface,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Mini Calendar',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            TableCalendar<TaskModel>(
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2100, 12, 31),
-              focusedDay: selectedDate,
-              selectedDayPredicate: (date) =>
-                  DateTime(date.year, date.month, date.day) ==
-                  DateTime(
-                      selectedDate.year, selectedDate.month, selectedDate.day),
-              eventLoader: (date) {
-                final key = DateTime(date.year, date.month, date.day);
-                return events[key] ?? [];
-              },
-              calendarBuilders: CalendarBuilders(
-                markerBuilder: (context, date, events) {
-                  if (events.isEmpty) return const SizedBox.shrink();
-                  final high = events
-                      .where((e) => e.priority == TaskPriority.high)
-                      .length;
-                  final med = events
-                      .where((e) => e.priority == TaskPriority.medium)
-                      .length;
-                  final low = events
-                      .where((e) => e.priority == TaskPriority.low)
-                      .length;
-                  return Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Cozy Calendar',
+            style: tt.titleLarge?.copyWith(
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TableCalendar<TaskModel>(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2100, 12, 31),
+            focusedDay: selectedDate,
+            selectedDayPredicate: (date) =>
+                DateTime(date.year, date.month, date.day) ==
+                DateTime(
+                    selectedDate.year, selectedDate.month, selectedDate.day),
+            eventLoader: (date) {
+              final key = DateTime(date.year, date.month, date.day);
+              return events[key] ?? [];
+            },
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, date, events) {
+                if (events.isEmpty) return const SizedBox.shrink();
+                final high =
+                    events.where((e) => e.priority == TaskPriority.high).length;
+                final med = events
+                    .where((e) => e.priority == TaskPriority.medium)
+                    .length;
+                final low =
+                    events.where((e) => e.priority == TaskPriority.low).length;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (high > 0)
-                        const CircleAvatar(
-                            radius: 4, backgroundColor: Colors.redAccent),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          decoration: BoxDecoration(
+                            color: cs.tertiary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                       if (med > 0)
-                        const CircleAvatar(
-                            radius: 4, backgroundColor: Colors.orangeAccent),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          decoration: BoxDecoration(
+                            color: cs.secondary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                       if (low > 0)
-                        const CircleAvatar(
-                            radius: 4, backgroundColor: Colors.greenAccent),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          decoration: BoxDecoration(
+                            color: cs.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                     ],
-                  );
-                },
-              ),
-              onDaySelected: (day, focusedDay) {
-                ref.read(selectedDateProvider.notifier).setDate(day);
+                  ),
+                );
               },
-              headerStyle: const HeaderStyle(
-                  formatButtonVisible: false, titleCentered: true),
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                    color: Colors.white24, shape: BoxShape.circle),
-                selectedDecoration: BoxDecoration(
-                    color: Colors.blueAccent, shape: BoxShape.circle),
-                markerSizeScale: 0.6,
-                cellMargin: const EdgeInsets.all(1),
+            ),
+            onDaySelected: (day, focusedDay) {
+              ref.read(selectedDateProvider.notifier).setDate(day);
+            },
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextStyle: tt.titleMedium?.copyWith(
+                    color: cs.onSurface,
+                  ) ??
+                  const TextStyle(),
+              leftChevronIcon: Icon(
+                Icons.chevron_left_rounded,
+                color: cs.onSurfaceVariant,
+              ),
+              rightChevronIcon: Icon(
+                Icons.chevron_right_rounded,
+                color: cs.onSurfaceVariant,
               ),
             ),
-          ],
-        ),
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekdayStyle: tt.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ) ??
+                  const TextStyle(),
+              weekendStyle: tt.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                  ) ??
+                  const TextStyle(),
+            ),
+            calendarStyle: CalendarStyle(
+              // Default day
+              defaultTextStyle: tt.bodyMedium?.copyWith(
+                    color: cs.onSurface,
+                  ) ??
+                  const TextStyle(),
+              weekendTextStyle: tt.bodyMedium?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.7),
+                  ) ??
+                  const TextStyle(),
+              outsideTextStyle: tt.bodyMedium?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.5),
+                  ) ??
+                  const TextStyle(),
+
+              // Today — soft surface highlight
+              todayDecoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              todayTextStyle: tt.bodyMedium?.copyWith(
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ) ??
+                  const TextStyle(),
+
+              // Selected — primary container fill
+              selectedDecoration: BoxDecoration(
+                color: CozyColors.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              selectedTextStyle: tt.bodyMedium?.copyWith(
+                    color: CozyColors.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ) ??
+                  const TextStyle(),
+
+              markerSizeScale: 0.5,
+              cellMargin: const EdgeInsets.all(3),
+              cellPadding: const EdgeInsets.all(2),
+            ),
+          ),
+        ],
       ),
     );
   }

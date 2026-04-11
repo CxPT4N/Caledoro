@@ -32,6 +32,15 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.coverage/
+coverage/
+lcov.info
+*.coverage
+test/
+TESTING.md
+AGENTS.md
+CHANGELOG.md
+*.plan.md
 
 # Symbolication related
 app.*.symbols
