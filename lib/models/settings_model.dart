@@ -37,7 +37,7 @@ class SettingsModel extends HiveObject {
   @HiveField(7)
   bool isDarkMode;
 
-  @HiveField(8)
+  @HiveField(8, defaultValue: TaskSortMode.smart)
   TaskSortMode taskSortMode;
 
   SettingsModel({

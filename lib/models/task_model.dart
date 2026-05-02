@@ -83,10 +83,10 @@ class TaskModel extends HiveObject {
   @HiveField(7)
   DateTime? lastCompletedDate;
 
-  @HiveField(8)
+  @HiveField(8, defaultValue: <SubtaskModel>[])
   List<SubtaskModel> subtasks;
 
-  @HiveField(9)
+  @HiveField(9, defaultValue: 0)
   int sortOrder;
 
   TaskModel({
