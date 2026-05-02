@@ -38,6 +38,15 @@ class HiveService {
     if (!Hive.isAdapterRegistered(2)) {
       Hive.registerAdapter(SettingsModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(3)) {
+      Hive.registerAdapter(SubtaskCreatorAdapter());
+    }
+    if (!Hive.isAdapterRegistered(4)) {
+      Hive.registerAdapter(SubtaskModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(5)) {
+      Hive.registerAdapter(TaskSortModeAdapter());
+    }
 
     await Hive.openBox<TaskModel>(tasksBoxName);
     await Hive.openBox<SettingsModel>(settingsBoxName);
