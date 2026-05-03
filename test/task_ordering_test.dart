@@ -1,23 +1,59 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:caledoro/models/settings_model.dart';
 import 'package:caledoro/models/task_model.dart';
+import 'package:caledoro/providers/settings_provider.dart';
 import 'package:caledoro/providers/task_provider.dart';
 import 'package:caledoro/services/hive_service.dart';
 import 'package:caledoro/utils/date_utils.dart';
 
 void main() {
+  late Directory tempDir;
+
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await HiveService.init();
+    tempDir = await Directory.systemTemp.createTemp('caledoro_test_');
+    Hive.init(tempDir.path);
+
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(TaskPriorityAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(TaskModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(SettingsModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(3)) {
+      Hive.registerAdapter(SubtaskCreatorAdapter());
+    }
+    if (!Hive.isAdapterRegistered(4)) {
+      Hive.registerAdapter(SubtaskModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(5)) {
+      Hive.registerAdapter(TaskSortModeAdapter());
+    }
+
+    await Hive.openBox<TaskModel>(HiveService.tasksBoxName);
+    final settingsBox = await Hive.openBox<SettingsModel>(
+      HiveService.settingsBoxName,
+    );
+    if (settingsBox.isEmpty) {
+      await settingsBox.put('settings', SettingsModel());
+    }
   });
 
   setUp(() async {
     await HiveService.tasksBox().clear();
+    await HiveService.settingsBox().clear();
   });
 
   tearDownAll(() async {
     await Hive.close();
+    await tempDir.delete(recursive: true);
   });
 
   test('Reorder ignores tasks from other days and appends remaining', () async {
@@ -89,5 +125,25 @@ void main() {
     );
     final allDone = task.subtasks.every((s) => s.completed);
     expect(allDone, false);
+  });
+
+  test('Settings default to smart order', () {
+    final s = SettingsModel();
+    expect(s.taskSortMode, TaskSortMode.smart);
+  });
+
+  test('Settings provider persists task sort mode', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final notifier = container.read(settingsProvider.notifier);
+    await notifier.update(taskSortMode: TaskSortMode.custom);
+
+    final state = container.read(settingsProvider);
+    expect(state.taskSortMode, TaskSortMode.custom);
+
+    final stored = HiveService.settingsBox().get('settings');
+    expect(stored, isNotNull);
+    expect(stored!.taskSortMode, TaskSortMode.custom);
   });
 }

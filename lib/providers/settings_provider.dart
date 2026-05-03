@@ -22,6 +22,7 @@ class SettingsNotifier extends Notifier<SettingsModel> {
     bool? notificationsEnabled,
     bool? soundEnabled,
     bool? isDarkMode,
+    TaskSortMode? taskSortMode,
   }) async {
     state = SettingsModel(
       workMinutes: workMinutes ?? state.workMinutes,
@@ -33,6 +34,7 @@ class SettingsNotifier extends Notifier<SettingsModel> {
       notificationsEnabled: notificationsEnabled ?? state.notificationsEnabled,
       soundEnabled: soundEnabled ?? state.soundEnabled,
       isDarkMode: isDarkMode ?? state.isDarkMode,
+      taskSortMode: taskSortMode ?? state.taskSortMode,
     );
     await HiveService.settingsBox().put('settings', state);
   }
