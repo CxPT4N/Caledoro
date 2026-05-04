@@ -51,7 +51,25 @@ class TaskListNotifier extends Notifier<List<TaskModel>> {
     required DateTime dueDate,
     TaskPriority priority = TaskPriority.medium,
     bool recurringDaily = false,
+    List<String> subtaskLabels = const [],
   }) async {
+    final sameDay = state.where(
+      (task) => DateUtilsHelper.isSameDay(task.dueDate, dueDate),
+    );
+    final maxOrder = sameDay.isEmpty
+        ? -1
+        : sameDay.map((task) => task.sortOrder).reduce(math.max);
+    final nextOrder = maxOrder + 1;
+    final subtasks = <SubtaskModel>[];
+    for (var i = 0; i < subtaskLabels.length; i++) {
+      final label = subtaskLabels[i].trim();
+      if (label.isEmpty) continue;
+      subtasks.add(SubtaskModel(
+        id: const Uuid().v4(),
+        label: label,
+        sortOrder: subtasks.length,
+      ));
+    }
     final task = TaskModel(
       id: const Uuid().v4(),
       title: title.trim(),
@@ -59,6 +77,8 @@ class TaskListNotifier extends Notifier<List<TaskModel>> {
       dueDate: dueDate,
       priority: priority,
       recurringDaily: recurringDaily,
+      subtasks: subtasks,
+      sortOrder: nextOrder,
     );
     final box = HiveService.tasksBox();
     try {
@@ -102,6 +122,21 @@ class TaskListNotifier extends Notifier<List<TaskModel>> {
   }
 
   Future<void> updateTask(TaskModel task) async {
+    final current = state.firstWhere(
+      (t) => t.id == task.id,
+      orElse: () => task,
+    );
+
+    if (!DateUtilsHelper.isSameDay(current.dueDate, task.dueDate)) {
+      final sameDay = state.where(
+        (t) => DateUtilsHelper.isSameDay(t.dueDate, task.dueDate) && t.id != task.id,
+      );
+      final maxOrder = sameDay.isEmpty
+          ? -1
+          : sameDay.map((t) => t.sortOrder).reduce(math.max);
+      task.sortOrder = maxOrder + 1;
+    }
+
     await task.save();
     state = state.map((t) => t.id == task.id ? task : t).toList();
   }
@@ -222,6 +257,35 @@ class TaskListNotifier extends Notifier<List<TaskModel>> {
     } catch (e, stackTrace) {
       Error.throwWithStackTrace(
         TaskOperationException('Failed to reorder subtasks.', cause: e),
+        stackTrace,
+      );
+    }
+  }
+
+  Future<void> clearCompletedSubtasks(String taskId) async {
+    final index = state.indexWhere((task) => task.id == taskId);
+    if (index == -1) return;
+    final task = state[index];
+
+    try {
+      final pending = task.subtasks.where((s) => !s.completed).toList();
+      for (var i = 0; i < pending.length; i++) {
+        pending[i].sortOrder = i;
+      }
+      task.subtasks = pending;
+      if (task.subtasks.isNotEmpty) {
+        final allCompleted = task.subtasks.every((s) => s.completed);
+        task.completed = allCompleted;
+        task.lastCompletedDate = allCompleted ? DateTime.now() : null;
+      } else {
+        task.completed = false;
+        task.lastCompletedDate = null;
+      }
+      await task.save();
+      state = [...state]..[index] = task;
+    } catch (e, stackTrace) {
+      Error.throwWithStackTrace(
+        TaskOperationException('Failed to clear completed subtasks.', cause: e),
         stackTrace,
       );
     }

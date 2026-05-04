@@ -4,6 +4,7 @@ import '../models/settings_model.dart';
 import '../models/task_model.dart';
 import '../providers/settings_provider.dart';
 import '../providers/task_provider.dart';
+import '../screens/task_detail_screen.dart';
 import '../theme.dart';
 import '../utils/date_utils.dart';
 
@@ -66,6 +67,8 @@ class TaskChecklistWidget extends ConsumerWidget {
       );
     }
 
+    final isDense = dayTasks.length > 6;
+
     if (settings.taskSortMode == TaskSortMode.custom) {
       return ReorderableListView.builder(
         shrinkWrap: true,
@@ -94,6 +97,7 @@ class TaskChecklistWidget extends ConsumerWidget {
               task: task,
               showDragHandle: true,
               dragIndex: index,
+              dense: isDense,
             ),
           );
         },
@@ -110,6 +114,7 @@ class TaskChecklistWidget extends ConsumerWidget {
         return _QuestCard(
           key: ValueKey('task-${task.id}'),
           task: task,
+          dense: isDense,
         );
       },
     );
@@ -121,12 +126,14 @@ class _QuestCard extends ConsumerStatefulWidget {
   final TaskModel task;
   final bool showDragHandle;
   final int? dragIndex;
+  final bool dense;
 
   const _QuestCard({
     super.key,
     required this.task,
     this.showDragHandle = false,
     this.dragIndex,
+    this.dense = false,
   });
 
   @override
@@ -145,6 +152,14 @@ class _QuestCardState extends ConsumerState<_QuestCard> {
         SnackBar(content: Text(e.message)),
       );
     }
+  }
+
+  void _openTaskDetail(BuildContext context, TaskModel task) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TaskDetailScreen(taskId: task.id),
+      ),
+    );
   }
 
   @override
@@ -184,15 +199,15 @@ class _QuestCardState extends ConsumerState<_QuestCard> {
         borderRadius: BorderRadius.circular(24),
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-            onLongPress: () => _showDeleteConfirmation(context, ref, task),
-            onTap: () => _toggleTask(context, ref),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  // ── Oversized Checkbox (28x28, 10px radius) ──
-                  GestureDetector(
-                    onTap: () => _toggleTask(context, ref),
+          onLongPress: () => _showDeleteConfirmation(context, ref, task),
+          onTap: () => _openTaskDetail(context, task),
+          child: Padding(
+            padding: EdgeInsets.all(widget.dense ? 12 : 14),
+            child: Row(
+              children: [
+                // ── Oversized Checkbox (28x28, 10px radius) ──
+                GestureDetector(
+                  onTap: () => _toggleTask(context, ref),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOut,
@@ -219,35 +234,37 @@ class _QuestCardState extends ConsumerState<_QuestCard> {
 
                 const SizedBox(width: 16),
 
-                  // ── Task Content ──
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                        task.title,
-                        style: tt.bodyLarge?.copyWith(
-                          color: task.completed
-                              ? cs.onSurface.withValues(alpha: 0.45)
-                              : cs.onSurface,
-                          decoration: task.completed
-                              ? TextDecoration.lineThrough
-                              : null,
-                          decorationColor: cs.onSurface.withValues(alpha: 0.45),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        ),
-                        if (task.description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            task.description,
-                            style: tt.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                // ── Task Content ──
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.local_florist_rounded,
+                            size: 14,
+                            color: cs.primary.withValues(alpha: 0.8),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              task.title,
+                              style: tt.bodyLarge?.copyWith(
+                                color: task.completed
+                                    ? cs.onSurface.withValues(alpha: 0.45)
+                                    : cs.onSurface,
+                                decoration: task.completed
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                                decorationColor:
+                                    cs.onSurface.withValues(alpha: 0.45),
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
+                      ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
