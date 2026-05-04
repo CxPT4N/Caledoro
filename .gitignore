@@ -36,7 +36,7 @@ migrate_working_dir/
 coverage/
 lcov.info
 *.coverage
-test/
+# test/
 TESTING.md
 AGENTS.md
 CHANGELOG.md
